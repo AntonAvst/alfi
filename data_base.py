@@ -55,11 +55,6 @@ class DataBaseManager:
             df, table_name = process_statement(file)
             self.insert_df_to_table(df, table_name)
 
-    def update_transaction_category(self, table, id, new_value):
-        query = f'UPDATE {table} SET category = ? WHERE id = ?'
-        self.cursor.execute(query, (new_value, id))
-        self.connection.commit()
-
     def get_table_names(self):
         query = "SELECT name FROM sqlite_master WHERE type='table';"
         self.cursor.execute(query)
@@ -181,7 +176,22 @@ class DataBaseManager:
         pivot = df.pivot_table(index="month", columns="master_category", values="grand_total", fill_value=0)
         pivot.index = pd.to_datetime(pivot.index, format='%m').strftime('%B')
         return pivot.reset_index()
-
+    
+    def update_transaction_category(self, table, id, category):
+        query = f""" 
+                UPDATE {table}
+                SET category = ?, master_category = ?
+                WHERE id = ?
+                """
+        for master, subcategories in config_manager.configs['category_config.yaml']['categories']['master'].items():
+            if category in subcategories:
+                master_category = master
+        try:
+            self.cursor.execute(query, (category, master_category, id))
+            self.connection.commit()
+        except Exception as e:
+            print(f'unable to update category - {e}')
+        
 
 
 # # Utility: Logging Errors

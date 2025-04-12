@@ -17,16 +17,20 @@ class ConfigManager():
         with open(file_path, 'r', encoding='utf-8') as file:
             return yaml.safe_load(file)
         
-    def update_config(self, key, value, config_name='place_holder.yaml'):
-        file_path = self.configs_dir + config_name
-        # load existing config
-        with open(file_path, 'r', encoding='utf-8') as file:
-            config_data = yaml.safe_load(file)
-        
-        config_data[key] = value
+    def add_value_to_subcategory(self, new_value, nesting_levels=['categories','sub'], yaml_name='category_config.yaml'):
+        yaml_path = self.configs_dir + '\\' + yaml_name
+        with open(yaml_path, 'r', encoding='utf-8') as file:
+            data = yaml.safe_load(file)
 
-        with open(file_path, 'w', encoding='utf-8') as file:
-            yaml.dump(config_data, file, default_flow_style=False, allow_unicode=True)
-    
+        data_pointer = data
+        for level in nesting_levels:
+            data_pointer = data_pointer[level]
+        
+        data_pointer[] ljkgljkg
+
+        # Save back to file
+        with open(yaml_path, 'w', encoding='utf-8') as file:
+            yaml.dump(data, file, allow_unicode=True)
+        
 
 config_manager = ConfigManager()

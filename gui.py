@@ -112,9 +112,6 @@ class CategoryUpdateDialog(QDialog):
     def checkbox_toggled(self):
         return self.update_entry_checkbox.isChecked()
     
-    def update_category(self):
-        pass
-    
 class DateSelectionDialog(QDialog):
     def __init__(self, parent, scope):
         super().__init__(parent)
@@ -253,12 +250,16 @@ class DataVisualizer(QMainWindow):
         dialog = CategoryUpdateDialog(self, row_id, current_category)
         if dialog.exec_():
             new_category = dialog.get_selected_category()
-            self.update_category(selected_row, row_id, new_category)
+            update_config = dialog.checkbox_toggled()
+            self.update_category(selected_row, row_id, new_category, update_config)
 
-    def update_category(self, row_index, row_id, new_value):
+    def update_category(self, row_index, row_id, new_value, update_config):
         self.table_widget.setItem(row_index, 2, QTableWidgetItem(new_value)) # TODO: Column 2= category
         self.db.update_transaction_category(self.table_pointer, row_id, new_value)
-
+        self.load_table(self.table_pointer)
+        if update_config:
+            config_manager.add_value_to_subcategory(new_value)
+        
     def load_summary(self, start_date, end_date, scope): # TODO: load_summary() and load_table are very similar, maybe merge them to prevent duplicate code
         if scope == 'month':
             print(f'loading financial summary for {start_date[5:7]}')
