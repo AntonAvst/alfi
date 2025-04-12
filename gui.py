@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout,
     QHBoxLayout, QWidget, QTabWidget, QTableWidget, QTableWidgetItem, QDialog,
-    QLabel, QDateEdit, QDialogButtonBox, QComboBox
+    QLabel, QDateEdit, QDialogButtonBox, QComboBox, QCheckBox
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, QDate
@@ -35,8 +35,7 @@ def plot_monthly_summary(df):
         labels={"amount": "Total", "master_category": "Master Category"},
     )
     
-    fig.update_layout(barmode="stack", xaxis_title="Master Category", yaxis_title="Amount")
-    
+    fig.update_layout(barmode="stack", xaxis_title="Master Category", yaxis_title="Amount")   
 
     # Save Plotly figure to a temporary HTML file
     temp_html_file = tempfile.NamedTemporaryFile(delete=False, suffix=".html").name
@@ -80,11 +79,11 @@ class CategoryUpdateDialog(QDialog):
     def __init__(self, parent, row_id, current_category):
         super().__init__(parent)
         self.setWindowTitle('Update Category')
-        self.setFixedSize(300, 100)
+        self.setFixedSize(300, 150)
 
         self.row_id = row_id
 
-        category_list = [item[1] for item in config_manager.configs['category_config.yaml']['categories'].items()]
+        category_list = [item[1] for item in config_manager.configs['category_config.yaml']['categories']['sub'].items()]
         category_list = list(set(category_list)) # drop duplicates
 
         layout = QVBoxLayout(self)
@@ -97,6 +96,11 @@ class CategoryUpdateDialog(QDialog):
         self.category_dropdown.setCurrentText(current_category)
         layout.addWidget(self.category_dropdown)
 
+        # Checkbox
+        self.update_entry_checkbox = QCheckBox('Update all transactions of this type')
+        self.update_entry_checkbox.stateChanged.connect(self.checkbox_toggled)
+        layout.addWidget(self.update_entry_checkbox)
+
         # Update button
         self.update_button = QPushButton('Update')
         self.update_button.clicked.connect(self.accept)
@@ -104,6 +108,12 @@ class CategoryUpdateDialog(QDialog):
 
     def get_selected_category(self):
         return self.category_dropdown.currentText()
+    
+    def checkbox_toggled(self):
+        return self.update_entry_checkbox.isChecked()
+    
+    def update_category(self):
+        pass
     
 class DateSelectionDialog(QDialog):
     def __init__(self, parent, scope):
@@ -333,7 +343,6 @@ if __name__ == "__main__":
     # TODO:
     # - more robust logic for id generation - regenerate db
     # - add a permanat change to category change popup (add value to category_config.yaml)
-    # - add git
     # - add censored mode
     # - add log
     # - run as exe
