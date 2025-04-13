@@ -343,7 +343,6 @@ class DataVisualizer(QMainWindow):
 # Run the Application
 if __name__ == "__main__":
     # TODO:
-    # - more robust logic for id generation - regenerate db
     # - add censored mode
     # - add log
     # - run as exe

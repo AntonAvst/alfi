@@ -113,7 +113,7 @@ def process_bank_statement(csv_path):
     df["category"] = df.apply(assign_category, axis=1)
 
     # convert data types
-    df["date"] = pd.to_datetime(df["date"], errors="coerce", format='%d/%m/%Y')
+    df["date"] = pd.to_datetime(df["date"], errors="coerce", format='%d/%m/%y')
     df = df.dropna(subset=['date'])  # Remove NaT values (invalid dates)
     df["debit"] = df["debit"].astype(str).str.replace(",", "").astype(float)
     df["credit"] = df["credit"].astype(str).str.replace(",", "").astype(float)
