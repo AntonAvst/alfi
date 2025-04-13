@@ -27,7 +27,6 @@ class ConfigManager():
             data_pointer = data_pointer[level]
         
         data_pointer[new_value] = new_key
-        print(data)
 
         # Save back to file
         with open(yaml_path, 'w', encoding='utf-8') as file:
