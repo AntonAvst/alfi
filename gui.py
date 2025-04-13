@@ -12,7 +12,6 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, QDate
 import tempfile
 from data_base import DataBaseManager
-import transactions
 from PyQt5.QtGui import QColor
 from config_manager import config_manager
 from datetime import datetime
@@ -21,7 +20,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-def plot_monthly_summary(df):
+def plot_monthly_summary(df, month):
     # Filter out rows where master_category is 'ignore'
     df = df[df["master_category"].str.lower() != "ignore"]
 
@@ -31,7 +30,7 @@ def plot_monthly_summary(df):
         x="master_category",
         y="amount",
         color="category",
-        title="Spending by Master Category and Sub-Category",
+        title=f"Monthly Summary - {month}",
         labels={"amount": "Total", "master_category": "Master Category"},
     )
     
@@ -43,7 +42,7 @@ def plot_monthly_summary(df):
     
     return temp_html_file
 
-def plot_yearly_summary(df):
+def plot_yearly_summary(df, year):
     expense_columns = [col for col in df.columns if col not in ['income', 'ignore', 'month', 'savings']]
     df[expense_columns] = df[expense_columns].apply(pd.to_numeric, errors='coerce')
     df['expenses'] = df[expense_columns].abs().sum(axis=1)
@@ -60,7 +59,7 @@ def plot_yearly_summary(df):
         x='month',
         y='amount',
         color='type',
-        title="Monthly Income vs Expenses",
+        title=f"Yearly Summary - {year}",
         markers=True,
         labels={'amount': 'Total Amount', 'month': 'Month', 'type': 'Type'}
     )
@@ -265,11 +264,11 @@ class DataVisualizer(QMainWindow):
         if scope == 'month':
             print(f'loading financial summary for {start_date[5:7]}')
             df = self.db.get_category_totals_by_month(start_date, end_date)
-            chart_file = plot_monthly_summary(df)
+            chart_file = plot_monthly_summary(df, start_date[:7])
         if scope == 'year':
             print(f'loading financial summary for {start_date[:4]}')
             df = self.db.get_monthly_summary_all_tables_by_master_category(start_date[:4])
-            chart_file = plot_yearly_summary(df)            
+            chart_file = plot_yearly_summary(df, start_date[:4])            
         self.plotly_view.setUrl(QUrl.fromLocalFile(chart_file))
 
         try:
@@ -343,6 +342,7 @@ class DataVisualizer(QMainWindow):
 # Run the Application
 if __name__ == "__main__":
     # TODO:
+    # - add month\year to summary plot header
     # - add censored mode
     # - add log
     # - run as exe
