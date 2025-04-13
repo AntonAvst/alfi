@@ -17,7 +17,7 @@ class ConfigManager():
         with open(file_path, 'r', encoding='utf-8') as file:
             return yaml.safe_load(file)
         
-    def add_value_to_subcategory(self, new_value, nesting_levels=['categories','sub'], yaml_name='category_config.yaml'):
+    def add_value_to_subcategory(self, new_key, new_value, nesting_levels=['categories','sub'], yaml_name='category_config.yaml'):
         yaml_path = self.configs_dir + '\\' + yaml_name
         with open(yaml_path, 'r', encoding='utf-8') as file:
             data = yaml.safe_load(file)
@@ -26,7 +26,8 @@ class ConfigManager():
         for level in nesting_levels:
             data_pointer = data_pointer[level]
         
-        data_pointer[] ljkgljkg
+        data_pointer[new_value] = new_key
+        print(data)
 
         # Save back to file
         with open(yaml_path, 'w', encoding='utf-8') as file:
