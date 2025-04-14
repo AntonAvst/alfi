@@ -342,7 +342,6 @@ class DataVisualizer(QMainWindow):
 # Run the Application
 if __name__ == "__main__":
     # TODO:
-    # - add month\year to summary plot header
     # - add censored mode
     # - add log
     # - run as exe
