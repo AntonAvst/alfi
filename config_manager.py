@@ -32,6 +32,8 @@ class ConfigManager():
         with open(yaml_path, 'w', encoding='utf-8') as file:
             yaml.dump(data, file, allow_unicode=True)
 
+        print(f'added new value - {new_value} to sub category - {new_key}')
+
     def add_new_category(self, sub, master, yaml_name='category_config.yaml'): # TODO: similar wrapper log to add_value_subcategory(), maybe merge it?
         yaml_path = self.configs_dir + '\\' + yaml_name
         with open(yaml_path, 'r', encoding='utf-8') as file:
