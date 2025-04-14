@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout,
     QHBoxLayout, QWidget, QTabWidget, QTableWidget, QTableWidgetItem, QDialog,
-    QLabel, QDateEdit, QDialogButtonBox, QComboBox, QCheckBox
+    QLabel, QDateEdit, QDialogButtonBox, QComboBox, QCheckBox, QLineEdit
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, QDate
@@ -111,6 +111,33 @@ class CategoryUpdateDialog(QDialog):
     def checkbox_toggled(self):
         return self.update_entry_checkbox.isChecked()
     
+class AddCategoryDialog(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Add New Category')
+        self.setFixedSize(600, 200)
+        layout = QVBoxLayout(self)
+        
+        # Text Input
+        layout.addWidget(QLabel('Enter New Category Name:'))        
+        self.text_input = QLineEdit()
+        layout.addWidget(self.text_input)
+
+        # Dropdown
+        layout.addWidget(QLabel('Select Master Category:'))
+        self.master_dropdown = QComboBox()
+        self.master_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'])
+        self.master_dropdown.setMaxVisibleItems(len(config_manager.configs['category_config.yaml']['categories']['master']))
+        layout.addWidget(self.master_dropdown)
+
+        # Add Button
+        self.add_button = QPushButton("Add")
+        self.add_button.clicked.connect(self.accept)
+        layout.addWidget(self.add_button)
+
+    def get_values(self):
+        return self.text_input.text(), self.master_dropdown.currentText()
+    
 class DateSelectionDialog(QDialog):
     def __init__(self, parent, scope):
         super().__init__(parent)
@@ -205,6 +232,10 @@ class DataVisualizer(QMainWindow):
         self.update_button.clicked.connect(self.show_category_popup)
         sidebar.addWidget(self.update_button)
 
+        self.add_category_button = QPushButton('Add New Category')
+        self.add_category_button.clicked.connect(self.add_category_popup)
+        sidebar.addWidget(self.add_category_button)
+
         self.view_month_summary_button = QPushButton('View Monthly Summary')
         self.view_month_summary_button.clicked.connect(lambda: self.spending_summary_by_date_popup('month'))
         sidebar.addWidget(self.view_month_summary_button)
@@ -259,6 +290,12 @@ class DataVisualizer(QMainWindow):
         self.load_table(self.table_pointer)
         if update_config:
             config_manager.add_value_to_subcategory(new_value, details)
+
+    def add_category_popup(self):
+        dialog = AddCategoryDialog(self)
+        if dialog.exec_():
+            sub, master = dialog.get_values()
+            config_manager.add_new_category(sub, master)
         
     def load_summary(self, start_date, end_date, scope): # TODO: load_summary() and load_table are very similar, maybe merge them to prevent duplicate code
         if scope == 'month':
