@@ -7,7 +7,6 @@ It's a finanacial tracker where you can upload your finanacial statments - bank,
 The tracker will created a local database and summaraize to a monthly and yearly summary.
 
 ### Upcoming Features:
-* log
 * censored mode
 * compile to an executable
 * user initial setup
