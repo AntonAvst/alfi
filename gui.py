@@ -23,6 +23,15 @@ from logger import get_logger
 
 log = get_logger()
 
+def handle_exception(exc_type, exc_value, exc_traceback):
+     # log all unhandled exceptions 
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    log.critical("Unhandled exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = handle_exception
+
 
 def plot_monthly_summary(df, month):
     # Filter out rows where master_category is 'ignore'
