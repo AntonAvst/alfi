@@ -2,6 +2,10 @@ import sqlite3
 from transactions import process_statement
 import pandas as pd
 from config_manager import config_manager
+from logger import get_logger
+
+
+log = get_logger()
 
 
 class DataBaseManager:
@@ -31,16 +35,16 @@ class DataBaseManager:
         try:
             self.cursor.execute(create_table_query)
             self.connection.commit()
-            print('db created successfully')
+            log.info(f'table created successfully - {table_name}')
         except Exception as e:
-            print(f'failed to create db: {e}')
+            log.error(f'failed to create db: {e}')
 
     def insert_df_to_table(self, df, table_name):
         # insert to db
         try:
             df.to_sql(table_name, self.connection, if_exists='append', index=False)
         except Exception as e:
-            print(f'failed to preocess statment: {e}')
+            log.error(f'failed to process statement: {e}')
 
     def fetch_table(self, table_name):         
          """Fetches all rows from the given table """
@@ -190,16 +194,4 @@ class DataBaseManager:
             self.cursor.execute(query, (category, master_category, id))
             self.connection.commit()
         except Exception as e:
-            print(f'unable to update category - {e}')
-        
-
-
-# # Utility: Logging Errors
-# def log_error(error):
-#     # Implement logging to a file or console
-#     print("Database Error:", error)
-
-# if __name__ == "__main__":
-#     db = DataBaseManager()
-#     df = db.get_monthly_summary_all_tables_by_category('2025')
-#     print(df)
+            log.error(f'unable to update category - {e}')

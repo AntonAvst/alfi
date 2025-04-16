@@ -7,6 +7,10 @@ from convert_to_csv import convert_xls_to_csv
 from convert_to_csv import convert_xslx_to_csv
 import csv
 import hashlib
+from logger import get_logger
+
+
+log = get_logger()
 
 
 def assign_category(row):
@@ -24,7 +28,7 @@ def assign_master_category(category):
     return "uncategorized"
 
 def process_statement(file_path):
-    print(f'processing - {file_path}')
+    log.info(f'processing - {file_path}')
     mapping = {'kibutz': ['כלבו', 'חיוב חשמל לחודש', 'חדר אוכל', 'חיוב מים'],
                'credit_card': ['שם כרטיס', 'ארבע ספרות אחרונות'],
                'bank': ['יתרה בחשבון', 'מסגרת אשראי', 'תנועות אחרונות']
@@ -37,7 +41,7 @@ def process_statement(file_path):
     elif os.path.splitext(file_path)[1] == '.xlsx':
         file_path = convert_xslx_to_csv(file_path)
     elif os.path.splitex(file_path)[1] != '.csv':
-        print('unsupported file format - {os.path.splitex(file_path)[1]}')
+        log.info(f'unsupported file format - {os.path.splitex(file_path)[1]}')
         return None
 
     with open(file_path, newline='', encoding='utf-8') as csvfile:
@@ -53,7 +57,7 @@ def process_statement(file_path):
     for match, phrases in matches.items():
         if len(phrases) >= 2: # found at least 2 matching phrases in statement
             statement_type = match
-            print(f'statement identified as {statement_type}')
+            log.info(f'statement identified as {statement_type}')
     if statement_type == 'kibutz':
         return process_kibutz_statement(file_path)
     elif statement_type == 'credit_card':
@@ -61,7 +65,7 @@ def process_statement(file_path):
     elif statement_type == 'bank':
         return process_bank_statement(file_path)
 
-    print('something went wrong during process_statement()')
+    log.info('something went wrong during process_statement()')
     return None
 
 def generate_id(date, val_list):
@@ -210,7 +214,7 @@ def process_kibutz_statement(csv_path):
                             dtype=str               # Load all as strings initially to avoid conversion issues
                         )
     except Exception as e:
-        print(f'failed to read csv - {e}')
+        log.error(f'failed to read csv - {e}')
         return None
     
     # Identify and remove the first row containing "Unnamed"
@@ -265,18 +269,3 @@ def process_kibutz_statement(csv_path):
 
 def reverse_text(text):
     return text[::-1] if isinstance(text, str) else text
-
-# if __name__ == '__main__':
-#     df, source = process_statement('870000715_1.pdf')
-#     print(f'================ parse {source} statement: ================')
-#     print(df)
-    
-    
-#     df, source = process_statement('כל הכרטיסים.xlsx')
-#     print(f'================ parse {source} statement: ================')
-#     print(df)
-
-    
-#     df, source = process_statement('AccountActivity.xls')
-#     print(f'================ parse {source} statement: ================')
-#     print(df)

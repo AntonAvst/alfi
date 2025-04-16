@@ -18,6 +18,10 @@ from datetime import datetime
 from calendar import monthrange
 import plotly.express as px
 import plotly.graph_objects as go
+from logger import get_logger
+
+
+log = get_logger()
 
 
 def plot_monthly_summary(df, month):
@@ -204,11 +208,13 @@ class TableSelectionDialog(QDialog):
 # Main GUI Window
 class DataVisualizer(QMainWindow):
     def __init__(self):
+        log.info("starting alfi app")
+
         super().__init__()
 
         self.setWindowTitle("Data Visualizer")
         self.setGeometry(100, 100, 1000, 600)
-
+        
         self.db = DataBaseManager()
         self.table_pointer = None
 
@@ -299,11 +305,11 @@ class DataVisualizer(QMainWindow):
         
     def load_summary(self, start_date, end_date, scope): # TODO: load_summary() and load_table are very similar, maybe merge them to prevent duplicate code
         if scope == 'month':
-            print(f'loading financial summary for {start_date[5:7]}')
+            log.info(f'loading financial summary for {start_date[5:7]}')
             df = self.db.get_category_totals_by_month(start_date, end_date)
             chart_file = plot_monthly_summary(df, start_date[:7])
         if scope == 'year':
-            print(f'loading financial summary for {start_date[:4]}')
+            log.info(f'loading financial summary for {start_date[:4]}')
             df = self.db.get_monthly_summary_all_tables_by_master_category(start_date[:4])
             chart_file = plot_yearly_summary(df, start_date[:4])            
         self.plotly_view.setUrl(QUrl.fromLocalFile(chart_file))
@@ -323,10 +329,10 @@ class DataVisualizer(QMainWindow):
                     #     item.setBackground(QColor(255, 200, 200))
                     self.table_widget.setItem(row_idx, col_idx, item)
         except Exception as e:
-            print(f'unable to load summary: {e}')
+            log.error(f'unable to load summary: {e}')
 
     def load_table(self, table_name):
-        print(f'Loading table: {table_name}')
+        log.info(f'Loading table: {table_name}')
 
         df = self.db.fetch_table(table_name)
         self.table_widget.setRowCount(df.shape[0])
@@ -366,23 +372,19 @@ class DataVisualizer(QMainWindow):
 
     def open_file_dialog(self):
         """Opens a file dialog and prints selected file paths."""
+        log.info('selecting statement files for parsing')
         file_paths, _ = QFileDialog.getOpenFileNames(
             self, "Select Files", "", "All Files (*.*)"
         )
         if file_paths:
-            print("Selected Files:", file_paths)
+            log.info("Selected Files:", file_paths)
             self.db.batch_upload(file_paths)
         else:
-            print('no files selected')
+            log.info('no files selected')
 
 
 # Run the Application
-if __name__ == "__main__":
-    # TODO:
-    # - add censored mode
-    # - add log
-    # - run as exe
-
+if __name__ == "__main__":    
     app = QApplication(sys.argv)
     window = DataVisualizer()
     window.show()
