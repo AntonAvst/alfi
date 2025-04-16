@@ -9,16 +9,17 @@ from PyQt5.QtWidgets import (
     QLabel, QDateEdit, QDialogButtonBox, QComboBox, QCheckBox, QLineEdit
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl, QDate
+from PyQt5.QtCore import QUrl, QDate, Qt
 import tempfile
 from data_base import DataBaseManager
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPixmap
 from config_manager import config_manager
 from datetime import datetime
 from calendar import monthrange
 import plotly.express as px
 import plotly.graph_objects as go
 from logger import get_logger
+from pathlib import Path
 
 
 log = get_logger()
@@ -257,6 +258,14 @@ class DataVisualizer(QMainWindow):
         self.view_year_summary_button = QPushButton('View Yearly Summary')
         self.view_year_summary_button.clicked.connect(lambda: self.spending_summary_by_date_popup('year'))
         sidebar.addWidget(self.view_year_summary_button)
+
+        # logo
+        logo_label = QLabel()
+        icon_path = Path(__file__).parent / "graphics" / "alfi_icon.png"
+        pixmap = QPixmap(str(icon_path)).scaled(100, 100, Qt.KeepAspectRatio) 
+        logo_label.setPixmap(pixmap)
+        logo_label.setAlignment(Qt.AlignCenter) 
+        sidebar.addWidget(logo_label)
         
         sidebar.addStretch()  # Push buttons to the top
 
