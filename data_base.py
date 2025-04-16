@@ -25,6 +25,10 @@ class DataBaseManager:
         except Exception as e:
             log.error(f'failed to connect to database - {e}')            
         return connection, cursor
+    
+    def close_connection(self):
+        log.info('closing connection to database')
+        self.connection.close()
 
     def initialize_database(self, schema, table_name):
         # Initialize the Database (Create Table if Not Exists)

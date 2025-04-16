@@ -390,6 +390,12 @@ class DataVisualizer(QMainWindow):
         else:
             log.info('no files selected')
 
+    def closeEvent(self, event):
+        log.info('closing alfi app...')
+        self.db.close_connection()
+        log.info('app closed gracefully')
+        event.accept()
+
 
 # Run the Application
 if __name__ == "__main__":    
