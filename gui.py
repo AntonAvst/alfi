@@ -86,8 +86,7 @@ class CategoryUpdateDialog(QDialog):
 
         self.row_id = row_id
 
-        category_list = [item[1] for item in config_manager.configs['category_config.yaml']['categories']['sub'].items()]
-        category_list = list(set(category_list)) # drop duplicates
+        category_list = config_manager.configs['category_config.yaml']['categories']['sub']
 
         layout = QVBoxLayout(self)
         self.label = QLabel(f'select a new category for ID {row_id}')

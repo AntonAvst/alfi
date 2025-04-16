@@ -17,8 +17,13 @@ class DataBaseManager:
 
     def connect_to_database(self, db_path):
         # Connect to SQLite database (or create it if it doesn't exist)
-        connection = sqlite3.connect(db_path)
-        cursor = connection.cursor()
+        log.info(f'connecting to database - {db_path}')
+        try:
+            connection = sqlite3.connect(db_path)
+            cursor = connection.cursor()
+            log.info('connected to database succesfully')
+        except Exception as e:
+            log.error(f'failed to connect to database - {e}')            
         return connection, cursor
 
     def initialize_database(self, schema, table_name):
@@ -35,26 +40,33 @@ class DataBaseManager:
         try:
             self.cursor.execute(create_table_query)
             self.connection.commit()
-            log.info(f'table created successfully - {table_name}')
+            log.info(f'table created successfully - {table_name}') # TODO: provide more accurate info here (it doesnt create the table every time we run the app)
         except Exception as e:
             log.error(f'failed to create db: {e}')
 
     def insert_df_to_table(self, df, table_name):
         # insert to db
+        log.info(f'inserting df - {df.columns.tolist()}, to table - {table_name}')
         try:
             df.to_sql(table_name, self.connection, if_exists='append', index=False)
+            log.info('df inserted successfully')
         except Exception as e:
             log.error(f'failed to process statement: {e}')
 
     def fetch_table(self, table_name):         
          """Fetches all rows from the given table """
-         df = pd.read_sql(f'SELECT * FROM {table_name}', self.connection)
+         log.info(f'fetching table from database - {table_name}')
+         try:
+            df = pd.read_sql(f'SELECT * FROM {table_name}', self.connection)
+         except Exception as e:
+            log.error(f'failed to fetch table from database - {e}')
          return df
     
     def batch_upload(self, file_list):
         """
         receive a file list of statements - process statements and upload each statement to the corresponding table in db
         """
+        log.info(f'starting batch upload to database')
         for file in file_list:
             df, table_name = process_statement(file)
             self.insert_df_to_table(df, table_name)
@@ -187,11 +199,14 @@ class DataBaseManager:
                 SET category = ?, master_category = ?
                 WHERE id = ?
                 """
+        log.info(f'updating transaction category - table: {table}, id: {id}, category: {category} ')
         for master, subcategories in config_manager.configs['category_config.yaml']['categories']['master'].items():
             if category in subcategories:
                 master_category = master
+                log.info(f'identified master category as - {master_category}')
         try:
             self.cursor.execute(query, (category, master_category, id))
             self.connection.commit()
+            log.info('category updated successfully')
         except Exception as e:
             log.error(f'unable to update category - {e}')
