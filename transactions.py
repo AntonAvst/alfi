@@ -22,7 +22,7 @@ def assign_category(row):
 
 def assign_master_category(category):
     """Return the master category for a given subcategory"""
-    for master, subcategories in config_manager.configs['local_config.yaml']['categories']['master'].items():
+    for master, subcategories in config_manager.configs['category_config.yaml']['categories']['master'].items():
         if category in subcategories:
             return master
     return "uncategorized"
@@ -73,7 +73,7 @@ def generate_id(date, val_list):
     generate an int10 unique id by given values from a transaction.
     must include transaction date.
     """
-    raw_string = ''
+    raw_string = str(date)
     for val in val_list:
         val = str(val).replace(',', '').replace(' ', '')
         raw_string = f'{raw_string}|{val}'
@@ -252,7 +252,7 @@ def process_kibutz_statement(csv_path):
     df['source'] = 'kibutz'
 
     # convert data types
-    df["date"] = pd.to_datetime(df["date"], errors="coerce", format="%d/%m/%Y")
+    df["date"] = pd.to_datetime(df["date"], errors="coerce", format="%d/%m/%y").dt.date
     df["debit"] = df["debit"].astype(str).str.replace(",", "").astype(float)
     df["debit"] = pd.to_numeric(df["debit"], errors="coerce").fillna(0)
     df["credit"] = df["credit"].astype(str).str.replace(",", "").astype(float)
