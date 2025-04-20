@@ -54,41 +54,47 @@ def convert_pdf_to_csv(pdf_path):
             
             # Save to CSV with utf-8-sig encoding to preserve Hebrew
             final_df.to_csv(output_csv, index=False, encoding="utf-8-sig")
-            print(f"Extracted {len(all_data)} tables to CSV at {output_csv}")
+            log.info(f"Extracted {len(all_data)} tables to CSV at {output_csv}")
         else:
-            print("No tables found.")
+            log.error("No tables found.")
     return output_csv
 
 def convert_xls_to_csv(xls_path):
-    log.
+    try:
+        largest_table = pd.read_excel(xls_path, sheet_name=0)
+    except Exception as e:
+        log.warning(f'failed to read - {xls_path}, {e}, trying to read as html')
 
-    with open(xls_path, "r", encoding="utf-8") as file:
-        soup = BeautifulSoup(file, "html.parser")
-    tables = soup.find_all("table")
+    try:
+        with open(xls_path, "r", encoding="utf-8") as file:
+            soup = BeautifulSoup(file, "html.parser")
+        tables = soup.find_all("table")
 
-    if not tables:
-        print("No tables found in the HTML file.")
-        exit()
+        if not tables:
+            print("No tables found in the HTML file.")
+            exit()
 
-    largest_table = None
-    max_size = 0
+        largest_table = None
+        max_size = 0
 
-    for table in tables:
-        df = pd.read_html(StringIO(str(table)))[0]  # Convert to DataFrame
-        table_size = df.shape[0] * df.shape[1]  # Total elements (rows * columns)
+        for table in tables:
+            df = pd.read_html(StringIO(str(table)))[0]  # Convert to DataFrame
+            table_size = df.shape[0] * df.shape[1]  # Total elements (rows * columns)
 
-        if table_size > max_size:  # Compare with the largest found so far
-            max_size = table_size
-            largest_table = df
+            if table_size > max_size:  # Compare with the largest found so far
+                max_size = table_size
+                largest_table = df
+    except Exception as e:
+        log.error(f'failed to read as html - {e}')
 
     # Save the largest table to CSV
     if largest_table is not None:
         largest_table.to_csv("main_table.csv", index=False, encoding="utf-8")
-        print(f"Largest table saved as main_table.csv with {largest_table.shape[0]} rows and {largest_table.shape[1]} columns.")
+        log.info(f"Largest table saved as main_table.csv with {largest_table.shape[0]} rows and {largest_table.shape[1]} columns.")
     else:
-        print("No valid tables found.")
+        log.error("No valid tables found.")
 
-        print("Conversion completed successfully.")
+        log.info("Conversion completed successfully.")
     return 'main_table.csv'
 
 def convert_xslx_to_csv(xslx_path):
