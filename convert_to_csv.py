@@ -65,27 +65,27 @@ def convert_xls_to_csv(xls_path):
     except Exception as e:
         log.warning(f'failed to read - {xls_path}, {e}, trying to read as html')
 
-    try:
-        with open(xls_path, "r", encoding="utf-8") as file:
-            soup = BeautifulSoup(file, "html.parser")
-        tables = soup.find_all("table")
+        try:
+            with open(xls_path, "r", encoding="utf-8") as file:
+                soup = BeautifulSoup(file, "html.parser")
+            tables = soup.find_all("table")
 
-        if not tables:
-            print("No tables found in the HTML file.")
-            exit()
+            if not tables:
+                print("No tables found in the HTML file.")
+                exit()
 
-        largest_table = None
-        max_size = 0
+            largest_table = None
+            max_size = 0
 
-        for table in tables:
-            df = pd.read_html(StringIO(str(table)))[0]  # Convert to DataFrame
-            table_size = df.shape[0] * df.shape[1]  # Total elements (rows * columns)
+            for table in tables:
+                df = pd.read_html(StringIO(str(table)))[0]  # Convert to DataFrame
+                table_size = df.shape[0] * df.shape[1]  # Total elements (rows * columns)
 
-            if table_size > max_size:  # Compare with the largest found so far
-                max_size = table_size
-                largest_table = df
-    except Exception as e:
-        log.error(f'failed to read as html - {e}')
+                if table_size > max_size:  # Compare with the largest found so far
+                    max_size = table_size
+                    largest_table = df
+        except Exception as e:
+            log.error(f'failed to read as html - {e}')
 
     # Save the largest table to CSV
     if largest_table is not None:
