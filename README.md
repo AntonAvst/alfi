@@ -9,6 +9,7 @@ The tracker will created a local database and summaraize to a monthly and yearly
 ### Upcoming Features:
 * batch update category (througe entire db)
 * format for cal statements
+* cleanup temp files
 * censored mode
 * compile to an executable
 * user initial setup
