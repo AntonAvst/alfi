@@ -30,7 +30,7 @@ def assign_master_category(category):
 def process_statement(file_path):
     log.info(f'processing - {file_path}')
     mapping = {'kibutz': ['כלבו', 'חיוב חשמל לחודש', 'חדר אוכל', 'חיוב מים'],
-               'credit_card': ['שם כרטיס', 'ארבע ספרות אחרונות'],
+               'credit_card': ['שם כרטיס', 'ארבע ספרות אחרונות', 'ויזה', 'מסתיים ב', 'קורפוריט', 'מסטרקארד'],
                'bank': ['יתרה בחשבון', 'מסגרת אשראי', 'תנועות אחרונות']
                }
     matches = {key: [] for key in mapping}  # Store matches found

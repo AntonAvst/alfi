@@ -4,6 +4,11 @@ from bs4 import BeautifulSoup
 import pdfplumber
 import os
 from io import StringIO
+from logger import get_logger
+
+log = get_logger()
+
+
 
 # def convert_pdf_to_csv(pdf_path):
 #     # extract all tables from the PDF into a list of DataFrames.
@@ -55,6 +60,8 @@ def convert_pdf_to_csv(pdf_path):
     return output_csv
 
 def convert_xls_to_csv(xls_path):
+    log.
+
     with open(xls_path, "r", encoding="utf-8") as file:
         soup = BeautifulSoup(file, "html.parser")
     tables = soup.find_all("table")
