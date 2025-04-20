@@ -15,4 +15,4 @@ The tracker will created a local database and summaraize to a monthly and yearly
 * online connectivity
 
 ### Known Bugs:
-* ...
+* process credit card is borken (cal + isracard)
