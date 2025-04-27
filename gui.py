@@ -394,7 +394,7 @@ class DataVisualizer(QMainWindow):
             self, "Select Files", "", "All Files (*.*)"
         )
         if file_paths:
-            log.info("Selected Files:", file_paths)
+            log.info(f"Selected Files:, {file_paths}")
             self.db.batch_upload(file_paths)
         else:
             log.info('no files selected')
@@ -408,6 +408,7 @@ class DataVisualizer(QMainWindow):
 
 # Run the Application
 if __name__ == "__main__":    
+    # TODO: debug processe credit_card_transaction()
     app = QApplication(sys.argv)
     window = DataVisualizer()
     window.show()

@@ -27,6 +27,84 @@ def assign_master_category(category):
             return master
     return "uncategorized"
 
+def smart_parse_dates(df, column_name):
+    # Check if the first non-null value contains a time (:) or not
+    sample_value = df[column_name].dropna().iloc[0]    
+    if isinstance(sample_value, str) and ':' in sample_value:
+        df[column_name] = pd.to_datetime(df[column_name], errors='coerce').dt.date
+    else:
+        df[column_name] = pd.to_datetime(df[column_name], errors='coerce', format='%d/%m/%Y').dt.date    
+    return df
+
+def check_triggers(row, process_triggers, card_triggers):
+    identified_process = None
+    identified_card = None
+    if any(logic in row for logic in process_triggers):
+        for process in process_triggers:
+            if process in str(row):
+                identified_process = process
+                break
+    if any(card in str(row) for card in card_triggers):  # If row contains a credit card number
+            for card in card_triggers:
+                # Match card name followed by optional space and digits
+                for col in row:
+                    match = re.search(rf"{card}.*?(\d+)", col)              
+                    if match:
+                        identified_card = match.group(1)  # Return only the digits after the card
+                        break
+
+    return identified_card, identified_process
+
+def format_credit_card_statement(csv_path):
+    """ 
+    split all sub-tables in csv table to different df chunks 
+    assumptions: 
+    1. each statement comes partitioned to cards and processes (card number, local - international)
+    We create each chunk when we detect a trigger - credit card type or process type
+    """
+    def flush_chunk():
+        nonlocal current_chunk
+        if current_chunk:
+            all_chunks.append(pd.DataFrame(current_chunk))
+            current_chunk = []
+
+
+    # Load CSV without setting headers initially
+    df = pd.read_csv(csv_path, header=None, dtype=str)  # Load all as strings to avoid conversion issues
+
+    # Initialize variables
+    current_credit_card = None
+    card_types = ['ויזה', 'קורפוריט', 'מסטרקארד']
+    process_types = ['עסקאות בארץ', 'עסקאות בחו˝ל']
+    rows_to_ignore = ['סך חיוב בש"ח:', 'TOTAL FOR DATE']
+    current_chunk = []
+    all_chunks = []
+
+    for _, row in df.iterrows():
+        row_data = row.dropna().tolist()  # Remove NaN values from row 
+        identified_card, identified_process = check_triggers(row_data, process_types, card_types)
+
+        if identified_card:
+            current_credit_card = identified_card
+            identified_card = None
+            flush_chunk()
+            continue
+
+        if identified_process:
+            identified_process = None
+            flush_chunk()
+            continue
+
+        if len(row_data) > 1 and current_credit_card and not any(phrase in row_data for phrase in rows_to_ignore):
+            row_dict = row.to_dict()
+            if not current_chunk:
+                row_dict[len(row_dict)] = 'card'
+            else:
+                row_dict[len(row_dict)] = current_credit_card
+            current_chunk.append(row_dict)
+    flush_chunk()
+    return all_chunks
+
 def process_statement(file_path):
     log.info(f'processing - {file_path}')
     mapping = {'kibutz': ['כלבו', 'חיוב חשמל לחודש', 'חדר אוכל', 'חיוב מים'],
@@ -141,65 +219,44 @@ def process_bank_statement(csv_path):
 def process_credit_card_statement(csv_path):
     column_mapping = config_manager.configs['column_mapping.yaml']['credit_card']
 
-    # Load CSV without setting headers initially
-    df = pd.read_csv(csv_path, header=None, dtype=str)  # Load all as strings to avoid conversion issues
+    df_list = format_credit_card_statement(csv_path)
+    processed_dfs = []
 
-    # Initialize variables
-    current_credit_card = None
-    transactions = []
+    for df in df_list:
+        # Convert the cleaned transactions into a DataFrame
+        df = pd.DataFrame(df)
 
-    # Loop through rows to process transactions
-    for index, row in df.iterrows():
-        row_data = row.dropna().tolist()  # Remove NaN values from row
+        # Set the first row as column names and remove it from data
+        new_headers = list(df.iloc[0])  # Get first row as column headers
+        
+        df.columns = new_headers  # Set headers
+        df = df.iloc[1:].reset_index(drop=True)
+        df = df.dropna(axis=1, how='all')
+        df.columns = [col.replace("\n", " ").strip() for col in df.columns]
+        # Rename columns based on the mapping
+        df = df.rename(columns=lambda x: column_mapping.get(x.strip(), None))
+        # df.rename(columns=lambda x: column_mapping.get(x.strip(), x.strip().lower()), inplace=True)
+        df = df[[col for col in df.columns if col is not None]] # drop columns that where not renamed
 
-        if (len(row_data) == 1 or index == 0) and any(char.isdigit() for char in row_data[0]):  # If row contains a credit card number
-            credit_card_number = "".join(re.findall(r"\d+", row_data[0]))
-            if credit_card_number:  # If a valid number is found, store it
-                current_credit_card = credit_card_number
-        elif len(row_data) > 1:  # If row is a transaction (multiple columns)
-            row_dict = row.to_dict()
-            if not transactions:
-                row_dict[len(row_dict)] = 'card'
-            else:
-                row_dict[len(row_dict)] = current_credit_card  # Assign credit card number
-            transactions.append(row_dict)
+        df["category"] = df.apply(assign_category, axis=1)
+        df["master_category"] = df["category"].apply(lambda c: assign_master_category(c))
+        df['source'] = 'credit card'
 
-    # Convert the cleaned transactions into a DataFrame
-    df = pd.DataFrame(transactions)
+        # convert data types
+        df = smart_parse_dates(df, 'transaction_date')
+        df = df.dropna(subset=['transaction_date'])  # Remove NaT values (invalid dates)
+        df["credit_bill"] = df["credit_bill"].astype(str).str.replace(",", "").astype(float)
+        df["credit_bill"] = pd.to_numeric(df["credit_bill"], errors="coerce").fillna(0)
+        df["card"] = pd.to_numeric(df["card"], errors="coerce")   
 
-    # Set the first row as column names and remove it from data
-    new_headers = list(df.iloc[0])  # Get first row as column headers
-    
-    df.columns = new_headers  # Set headers
-    df = df.iloc[1:].reset_index(drop=True)
+        df['id'] = df.apply(lambda row: generate_id(row['transaction_date'],[
+            row.get('source'), row.get('category'), row.get('card'), row.get('credit_bill'), row.get('details')
+        ]), axis=1)
+        df = ensure_unique_ids(df)
 
-    # Drop rows that dont contain a date (not transactions)
-    df["תאריך חיוב"] = pd.to_datetime(df["תאריך חיוב"], errors="coerce")  # Invalid dates become NaT
-    df = df.dropna(subset=["תאריך חיוב"])  # Remove NaT values (invalid dates)
+        processed_dfs.append(df)
 
-    # Rename columns based on the mapping
-    df.rename(columns=lambda x: column_mapping.get(x.strip(), x.strip().lower()), inplace=True)
-
-    # add category
-    df["category"] = df.apply(assign_category, axis=1)
-    df["master_category"] = df["category"].apply(lambda c: assign_master_category(c))
-
-    # add source
-    df['source'] = 'credit card'
-
-     # convert data types
-    df["billing_date"] = pd.to_datetime(df["billing_date"], errors="coerce", format="%d/%m/%Y")
-    df["transaction_date"] = pd.to_datetime(df["transaction_date"], errors="coerce", format="%d/%m/%Y")
-    df["credit_bill"] = df["credit_bill"].astype(str).str.replace(",", "").astype(float)
-    df["credit_bill"] = pd.to_numeric(df["credit_bill"], errors="coerce").fillna(0)
-    df["card"] = pd.to_numeric(df["card"], errors="coerce")   
-
-    df['id'] = df.apply(lambda row: generate_id(row['transaction_date'],[
-        row.get('source'), row.get('category'), row.get('card'), row.get('credit_bill'), row.get('billing_date'),
-    ]), axis=1)
-    df = ensure_unique_ids(df)
-
-    return df, 'credit_card'
+    return pd.concat(processed_dfs, ignore_index=True), 'credit_card'
 
 def process_kibutz_statement(csv_path):
     column_mapping = config_manager.configs['column_mapping.yaml']['kibutz']
@@ -269,3 +326,56 @@ def process_kibutz_statement(csv_path):
 
 def reverse_text(text):
     return text[::-1] if isinstance(text, str) else text
+
+
+def split_by_card_and_process_type(csv_path):
+    df = pd.read_csv(csv_path, header=None, dtype=str)  # Load all as strings
+
+    card_types = ['ויזה', 'קורפוריט', 'מסטרקארד']
+    proccess_types = ['עסקאות בארץ', 'עסקאות בחו"ל']
+
+    current_credit_card = None
+    current_process_type = None
+    current_chunk = []
+    all_chunks = []
+
+    def flush_chunk():
+        nonlocal current_chunk
+        if current_chunk:
+            all_chunks.append(pd.DataFrame(current_chunk))
+            current_chunk = []
+
+    for _, row in df.iterrows():
+        row_data = row.dropna().tolist()
+        text = " ".join(row_data)
+
+        # Detect process type
+        for proc in proccess_types:
+            if proc in text:
+                if proc != current_process_type:
+                    flush_chunk()
+                    current_process_type = proc
+                break
+
+        # Detect card number
+        for card in card_types:
+            if card in text:
+                for col in row_data:
+                    match = re.search(rf"{card}.*?(\d+)", col)
+                    if match:
+                        new_card_number = match.group(1)
+                        if new_card_number != current_credit_card:
+                            flush_chunk()
+                            current_credit_card = new_card_number
+                        break
+                break
+
+        if len(row_data) > 1 and current_credit_card:
+            row_dict = row.to_dict()
+            row_dict['card'] = current_credit_card
+            row_dict['process_type'] = current_process_type
+            current_chunk.append(row_dict)
+
+    flush_chunk()
+    return all_chunks
+
