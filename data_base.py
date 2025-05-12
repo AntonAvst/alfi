@@ -214,3 +214,21 @@ class DataBaseManager:
             log.info('category updated successfully')
         except Exception as e:
             log.error(f'unable to update category - {e}')
+
+    def update_all_transaction_category_by_details(self, table, category, details):
+        query = f"""
+        UPDATE {table}
+        SET category = ?, master_category = ?
+        WHERE details = ?;
+        """
+        log.info(f'batch updating transactions category - table: {table}, category: {category}, details: {details}')
+        for master, subcategories in config_manager.configs['category_config.yaml']['categories']['master'].items():
+            if category in subcategories:
+                master_category = master
+                log.info(f'identified master category as - {master_category}')
+        try:
+            self.cursor.execute(query, (category, master_category, details))
+            self.connection.commit()
+            log.info('categories updated successfully for all relevent transactions')
+        except Exception as e:
+            log.error(f'unable to update category - {e}')

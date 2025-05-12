@@ -320,11 +320,13 @@ class DataVisualizer(QMainWindow):
             self.update_category(selected_row, row_id, new_category, details, update_config)
 
     def update_category(self, row_index, row_id, new_value, details, update_config):
-        self.table_widget.setItem(row_index, 2, QTableWidgetItem(new_value)) # TODO: Column 2= category
-        self.db.update_transaction_category(self.table_pointer, row_id, new_value)
-        self.load_table(self.table_pointer)
+        self.table_widget.setItem(row_index, 2, QTableWidgetItem(new_value)) # TODO: Column 2= category               
         if update_config:
+            self.db.update_all_transaction_category_by_details(table=self.table_pointer, category=new_value, details=details)
             config_manager.add_value_to_subcategory(new_value, details)
+        else:
+            self.db.update_transaction_category(self.table_pointer, row_id, new_value) 
+        self.load_table(self.table_pointer)
 
     def add_category_popup(self):
         dialog = AddCategoryDialog(self)
