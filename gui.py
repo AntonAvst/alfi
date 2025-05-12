@@ -92,21 +92,29 @@ class CategoryUpdateDialog(QDialog):
     def __init__(self, parent, row_id, current_category):
         super().__init__(parent)
         self.setWindowTitle('Update Category')
-        self.setFixedSize(300, 150)
+        self.setFixedSize(300, 200)
 
         self.row_id = row_id
-
-        category_list = config_manager.configs['category_config.yaml']['categories']['sub']
 
         layout = QVBoxLayout(self)
         self.label = QLabel(f'select a new category for ID {row_id}')
         layout.addWidget(self.label)
 
-        # Dropdown
+        # Dropdown - master category
+        layout.addWidget(QLabel('Select Master Category:'))
+        self.master_dropdown = QComboBox()
+        self.master_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'])
+        self.master_dropdown.setMaxVisibleItems(len(config_manager.configs['category_config.yaml']['categories']['master']))
+        layout.addWidget(self.master_dropdown)
+
+        # Dropdown - sub category
         self.category_dropdown = QComboBox()
-        self.category_dropdown.addItems(category_list)
         self.category_dropdown.setCurrentText(current_category)
         layout.addWidget(self.category_dropdown)
+
+        # Update subcategories based on initial master selection
+        self.update_subcategories(self.master_dropdown.currentText())
+        self.master_dropdown.currentTextChanged.connect(self.update_subcategories)
 
         # Checkbox
         self.update_entry_checkbox = QCheckBox('Update all transactions of this type')
@@ -117,6 +125,10 @@ class CategoryUpdateDialog(QDialog):
         self.update_button = QPushButton('Update')
         self.update_button.clicked.connect(self.accept)
         layout.addWidget(self.update_button)
+
+    def update_subcategories(self, selected_master):
+        self.category_dropdown.clear()
+        self.category_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'][selected_master])
 
     def get_selected_category(self):
         return self.category_dropdown.currentText()
@@ -408,7 +420,8 @@ class DataVisualizer(QMainWindow):
 
 # Run the Application
 if __name__ == "__main__":    
-    # TODO: debug processe credit_card_transaction()
+    # TODO: debug processing isracard transactions resaulting in unique id sql error
+    # uncategorizing english keys
     app = QApplication(sys.argv)
     window = DataVisualizer()
     window.show()

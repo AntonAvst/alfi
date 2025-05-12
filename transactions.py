@@ -36,10 +36,18 @@ def smart_parse_dates(df, column_name):
         df[column_name] = pd.to_datetime(df[column_name], errors='coerce', format='%d/%m/%Y').dt.date    
     return df
 
-def check_triggers(row, process_triggers, card_triggers):
+def check_triggers(row, process_triggers, card_triggers, billing_date_triggers):
     identified_process = None
     identified_card = None
-    if any(logic in row for logic in process_triggers):
+    identified_billing_date = None
+
+    if any(bill_phrase in (row if isinstance(row, str) else ''.join(row)) for bill_phrase in billing_date_triggers): # check for billing date 
+        for bill_phrase in billing_date_triggers:
+            match = re.search(r'\b\d{2}/\d{2}/(\d{2}|\d{4})\b', str(row))
+            if match:
+                identified_billing_date = match.group()
+
+    if any(logic in row for logic in process_triggers): # if any row contains process type
         for process in process_triggers:
             if process in str(row):
                 identified_process = process
@@ -53,7 +61,7 @@ def check_triggers(row, process_triggers, card_triggers):
                         identified_card = match.group(1)  # Return only the digits after the card
                         break
 
-    return identified_card, identified_process
+    return identified_card, identified_process, identified_billing_date
 
 def format_credit_card_statement(csv_path):
     """ 
@@ -74,18 +82,24 @@ def format_credit_card_statement(csv_path):
 
     # Initialize variables
     current_credit_card = None
+    current_billing_date = None
     card_types = ['ויזה', 'קורפוריט', 'מסטרקארד']
     process_types = ['עסקאות בארץ', 'עסקאות בחו˝ל']
+    billing_phrases = ['מועד חיוב', 'עסקאות לחיוב ב-']
     rows_to_ignore = ['סך חיוב בש"ח:', 'TOTAL FOR DATE']
     current_chunk = []
     all_chunks = []
 
     for _, row in df.iterrows():
         row_data = row.dropna().tolist()  # Remove NaN values from row 
-        identified_card, identified_process = check_triggers(row_data, process_types, card_types)
+        identified_card, identified_process, billing_date = check_triggers(row_data, process_types, card_types, billing_phrases)
+
+        if billing_date:
+            current_billing_date = billing_date
+            billing_date = None
 
         if identified_card:
-            current_credit_card = identified_card
+            current_credit_card = identified_card            
             identified_card = None
             flush_chunk()
             continue
@@ -99,8 +113,10 @@ def format_credit_card_statement(csv_path):
             row_dict = row.to_dict()
             if not current_chunk:
                 row_dict[len(row_dict)] = 'card'
+                row_dict[len(row_dict)] = 'billing_date'
             else:
                 row_dict[len(row_dict)] = current_credit_card
+                row_dict[len(row_dict)] = current_billing_date
             current_chunk.append(row_dict)
     flush_chunk()
     return all_chunks
