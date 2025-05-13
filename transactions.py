@@ -258,7 +258,7 @@ def process_credit_card_statement(csv_path):
         df["master_category"] = df["category"].apply(lambda c: assign_master_category(c))
         df['source'] = 'credit card'
 
-        # convert data types
+        # convert data types 
         df = smart_parse_dates(df, 'transaction_date')
         df = df.dropna(subset=['transaction_date'])  # Remove NaT values (invalid dates)
         df["credit_bill"] = df["credit_bill"].astype(str).str.replace(",", "").astype(float)
@@ -266,7 +266,7 @@ def process_credit_card_statement(csv_path):
         df["card"] = pd.to_numeric(df["card"], errors="coerce")   
 
         df['id'] = df.apply(lambda row: generate_id(row['transaction_date'],[
-            row.get('source'), row.get('category'), row.get('card'), row.get('credit_bill'), row.get('details')
+            row.get('source'), row.get('category'), row.get('card'), row.get('credit_bill'), row.get('details'), row.get('billing_date')
         ]), axis=1)
         df = ensure_unique_ids(df)
 
