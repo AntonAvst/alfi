@@ -425,8 +425,10 @@ class DataVisualizer(QMainWindow):
 
 # Run the Application
 if __name__ == "__main__":    
-    # TODO: uncategorizing english keys
     app = QApplication(sys.argv)
     window = DataVisualizer()
     window.show()
     sys.exit(app.exec_())
+
+# TODO:
+# bug - load yearly plot
