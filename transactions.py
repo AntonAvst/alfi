@@ -14,7 +14,7 @@ log = get_logger()
 
 
 def assign_category(row):
-    text = " ".join(str(row[col]).lower() for col in ['description', 'details'] if col in row and pd.notna(row[col]))
+    text = " ".join(str(row[col]) for col in ['description', 'details'] if col in row and pd.notna(row[col]))
     for keyword, category in config_manager.configs['local_config.yaml']['categories']['sub'].items():
         if keyword in text:
             return category

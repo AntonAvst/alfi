@@ -48,7 +48,7 @@ class ConfigManager():
         # Save back to file
         with open(yaml_path, 'w', encoding='utf-8') as file:
             yaml.dump(data, file, allow_unicode=True)
-
+        self.load_configs() # reload updated configs
         log.info(f'added new category - {sub}, to master category {master}')
 
 config_manager = ConfigManager()

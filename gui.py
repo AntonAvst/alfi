@@ -103,7 +103,7 @@ class CategoryUpdateDialog(QDialog):
         # Dropdown - master category
         layout.addWidget(QLabel('Select Master Category:'))
         self.master_dropdown = QComboBox()
-        self.master_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'])
+        self.master_dropdown.addItems(sorted(config_manager.configs['category_config.yaml']['categories']['master']))
         self.master_dropdown.setMaxVisibleItems(len(config_manager.configs['category_config.yaml']['categories']['master']))
         layout.addWidget(self.master_dropdown)
 
@@ -128,7 +128,7 @@ class CategoryUpdateDialog(QDialog):
 
     def update_subcategories(self, selected_master):
         self.category_dropdown.clear()
-        self.category_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'][selected_master])
+        self.category_dropdown.addItems(sorted(config_manager.configs['category_config.yaml']['categories']['master'][selected_master]))
 
     def get_selected_category(self):
         return self.category_dropdown.currentText()
@@ -151,7 +151,7 @@ class AddCategoryDialog(QDialog):
         # Dropdown
         layout.addWidget(QLabel('Select Master Category:'))
         self.master_dropdown = QComboBox()
-        self.master_dropdown.addItems(config_manager.configs['category_config.yaml']['categories']['master'])
+        self.master_dropdown.addItems(sorted(config_manager.configs['category_config.yaml']['categories']['master']))
         self.master_dropdown.setMaxVisibleItems(len(config_manager.configs['category_config.yaml']['categories']['master']))
         layout.addWidget(self.master_dropdown)
 
@@ -177,14 +177,14 @@ class DateSelectionDialog(QDialog):
         # Dropdowns
         layout.addWidget(QLabel('Select Year:'))
         self.year_dropdown = QComboBox()
-        self.year_dropdown.addItems(year_list)
+        self.year_dropdown.addItems(sorted(year_list))
         self.year_dropdown.setMaxVisibleItems(len(year_list))
         layout.addWidget(self.year_dropdown)
 
         if self.scope == 'month':
             layout.addWidget(QLabel('Select Month:'))
             self.month_dropdown = QComboBox()
-            self.month_dropdown.addItems(month_list)
+            self.month_dropdown.addItems(sorted(month_list))
             self.month_dropdown.setMaxVisibleItems(len(month_list))
             layout.addWidget(self.month_dropdown)
 
@@ -370,6 +370,8 @@ class DataVisualizer(QMainWindow):
         self.table_widget.setColumnCount(df.shape[1])
         self.table_widget.setHorizontalHeaderLabels(df.columns)
 
+        self.table_widget.setSortingEnabled(False)  # Disable during population to avoid glitches
+
         target_column = 'category'
         highlight_value = 'uncategorized'
 
@@ -379,6 +381,7 @@ class DataVisualizer(QMainWindow):
                 if row_data[target_column] == highlight_value:
                     item.setBackground(QColor(255, 200, 200))
                 self.table_widget.setItem(row_idx, col_idx, item)
+        self.table_widget.setSortingEnabled(True)
 
     def convert_selected_date_to_range(self, year, month):
         " convert selected year+month to date range of that month  "        
