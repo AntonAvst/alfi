@@ -57,13 +57,18 @@ def plot_monthly_summary(df, month):
     return temp_html_file
 
 def plot_yearly_summary(df, year):
+    columns_to_plot = ['month', 'income', 'expenses', 'savings']
     expense_columns = [col for col in df.columns if col not in ['income', 'ignore', 'month', 'savings']]
     df[expense_columns] = df[expense_columns].apply(pd.to_numeric, errors='coerce')
     df['expenses'] = df[expense_columns].abs().sum(axis=1)
     # df['income'] = pd.to_numeric(df.get('income', 0), errors='coerce')
 
+    for col in columns_to_plot: # protection if column doesn't exist
+        if col not in df.columns:
+            df[col] = 0
+
     # Prepare for plotting
-    plot_df = df[['month', 'income', 'expenses', 'savings']].melt(
+    plot_df = df[columns_to_plot].melt(
         id_vars='month', var_name='type', value_name='amount'
     )
 
@@ -429,6 +434,3 @@ if __name__ == "__main__":
     window = DataVisualizer()
     window.show()
     sys.exit(app.exec_())
-
-# TODO:
-# bug - load yearly plot
